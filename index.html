@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Participant Feedback | IHCFSI Sustainability Hackathon 2026</title>
+<style>
+  /* Base styles taken from the project's style.css so this page is self-contained */
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Segoe UI", Arial, sans-serif; }
+  body { background: #f4f8f6; color: #12332a; padding: 40px 20px; }
+  .form-container { max-width: 1150px; margin: auto; background: #ffffff; border-radius: 20px; padding: 40px; box-shadow: 0 18px 45px rgba(15, 70, 50, 0.12); }
+  .form-header { text-align: center; margin-bottom: 35px; }
+  .form-header h1 { color: #0f6b4a; font-size: 34px; margin-bottom: 8px; }
+  .section { margin-bottom: 35px; padding: 28px; border: 1px solid #dce9e4; border-radius: 16px; background: #fbfdfc; }
+  .section h2 { font-size: 22px; color: #083d2e; margin-bottom: 22px; border-left: 5px solid #0f6b4a; padding-left: 12px; }
+  .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+  .form-group { display: flex; flex-direction: column; }
+  .form-group.full { grid-column: span 2; }
+  label { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #263f37; line-height: 1.45; }
+  select, input { width: 100%; padding: 13px 14px; border: 1px solid #d3e1dc; border-radius: 10px; font-size: 15px; background: #ffffff; outline: none; }
+  input:focus, select:focus { border-color: #0f6b4a; box-shadow: 0 0 0 4px rgba(15, 107, 74, 0.12); }
+  .question-number { color: #0f6b4a; font-weight: 800; }
+  .alert { display: none; margin-bottom: 22px; padding: 14px 18px; border-radius: 12px; font-weight: 600; }
+  .alert.success { display: block; background: #e8f7ef; color: #0f6b4a; border: 1px solid #b7e3ca; }
+  .alert.error { display: block; background: #fff0f0; color: #a82424; border: 1px solid #f0b6b6; }
+  .nav-btn { border: none; padding: 14px 30px; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; transition: 0.25s; }
+  .next-btn { background: #0f6b4a; color: #ffffff; }
+  .nav-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(15, 70, 50, 0.15); }
+  @media (max-width: 768px) {
+    .form-container { padding: 25px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-group.full { grid-column: span 1; }
+    .nav-btn { width: 100%; }
+  }
+</style>
+<style>
+  /* Additions for this form only; everything else comes from style.css */
+  textarea {
+    width: 100%; min-height: 96px; resize: vertical; padding: 13px 14px;
+    border: 1px solid #d3e1dc; border-radius: 10px; font-size: 15px;
+    background: #ffffff; outline: none;
+  }
+  textarea:focus {
+    border-color: #0f6b4a; box-shadow: 0 0 0 4px rgba(15, 107, 74, 0.12);
+  }
+  .form-header p { color: #3d5a50; max-width: 760px; margin: 0 auto; line-height: 1.6; }
+  .form-header .event { color: #0f6b4a; font-weight: 700; margin-bottom: 14px; }
+
+  .scale { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; max-width: 480px; }
+  .choice { display: flex; flex-wrap: wrap; gap: 10px; }
+  .scale label, .choice label { margin: 0; cursor: pointer; font-weight: 700; }
+  .scale input, .choice input {
+    position: absolute; opacity: 0; width: 0; height: 0; padding: 0; border: 0;
+  }
+  .scale span, .choice span {
+    display: block; text-align: center; padding: 12px 8px;
+    border: 1px solid #d3e1dc; border-radius: 10px; background: #ffffff;
+    color: #263f37; font-size: 15px; transition: 0.15s;
+  }
+  .choice span { padding: 12px 22px; }
+  .scale label:hover span, .choice label:hover span { border-color: #0f6b4a; }
+  .scale input:checked + span, .choice input:checked + span {
+    background: #0f6b4a; border-color: #0f6b4a; color: #ffffff;
+  }
+  .scale input:focus-visible + span, .choice input:focus-visible + span {
+    box-shadow: 0 0 0 4px rgba(15, 107, 74, 0.25);
+  }
+  .ends { display: flex; justify-content: space-between; max-width: 480px; margin-top: 6px; font-size: 13px; color: #5b756b; }
+  .count { margin-top: 4px; font-size: 13px; color: #5b756b; text-align: right; }
+  .hint { font-weight: 400; color: #5b756b; }
+  .error { font-size: 13px; font-weight: 600; color: #a82424; margin-top: 6px; }
+  .invalid select, .invalid input[type=text], .invalid input[type=email], .invalid textarea { border-color: #a82424; }
+  .invalid .scale span, .invalid .choice span { border-color: #f0b6b6; }
+  [hidden] { display: none !important; }
+  button.nav-btn:disabled { opacity: 0.6; cursor: wait; transform: none; box-shadow: none; }
+  .submit-row { display: flex; justify-content: flex-end; margin-top: 4px; }
+  @media (max-width: 768px) { .submit-row .nav-btn { width: 100%; } }
+  /* Certificate Programme sign-up callout */
+  .section.course-offer {
+    display: flex; align-items: center; gap: 16px;
+    background: #e8f7ef; border: 1px solid #b7e3ca; border-left: 5px solid #0f6b4a;
+  }
+  .course-offer label {
+    margin: 0; font-size: 15px; font-weight: 500; line-height: 1.7; color: #12332a;
+  }
+  .course-offer-btn {
+    display: inline-block; padding: 3px 16px; margin: 0 2px;
+    background: #0f6b4a; color: #ffffff; font-weight: 700; text-decoration: none;
+    border-radius: 999px; transition: 0.2s;
+  }
+  .course-offer-btn:hover {
+    background: #083d2e; transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(15, 70, 50, 0.2);
+  }
+  .course-offer-btn:focus-visible {
+    outline: none; box-shadow: 0 0 0 4px rgba(15, 107, 74, 0.3);
+  }
+</style>
+</head>
+<body>
+<div class="form-container">
+  <div class="form-header">
+    <h1>Participant Feedback</h1>
+    <p class="event">IHCFSI Sustainability Hackathon 2026</p>
+    <p>Thank you for participating in the IIT Bombay-Honeywell Centre of Excellence for Future Skills and Innovation (IHCFSI) Sustainability Hackathon 2026. We would appreciate your feedback on your experience with the 1st round of screening. Your responses will help us understand what worked well and improve the process and participant experience for future editions.</p>
+  </div>
+
+  <div id="formAlert" class="alert" role="alert"></div>
+
+  <form id="fb" novalidate>
+    <div class="section">
+      <h2>Participant Details</h2>
+      <div class="form-grid">
+        <div class="form-group" data-f="name">
+          <label for="name"><span class="question-number">1.</span> Name</label>
+          <input type="text" id="name" name="name" maxlength="150" autocomplete="name">
+          <div class="error"></div>
+        </div>
+        <div class="form-group" data-f="institution">
+          <label for="institution"><span class="question-number">2.</span> Name of Institution</label>
+          <input type="text" id="institution" name="institution" maxlength="200">
+          <div class="error"></div>
+        </div>
+        <div class="form-group" data-f="team_name">
+          <label for="team_name"><span class="question-number">3.</span> Team Name</label>
+          <input type="text" id="team_name" name="team_name" maxlength="150">
+          <div class="error"></div>
+        </div>
+        <div class="form-group" data-f="registered_email">
+          <label for="registered_email"><span class="question-number">4.</span> Registered Email ID</label>
+          <input type="email" id="registered_email" name="registered_email" maxlength="255" autocomplete="email">
+          <div class="error"></div>
+        </div>
+        <div class="form-group" data-f="team_lead_email">
+          <label for="team_lead_email"><span class="question-number">5.</span> Team lead Email ID</label>
+          <input type="email" id="team_lead_email" name="team_lead_email" maxlength="255">
+          <div class="error"></div>
+        </div>
+        <div class="form-group" data-f="heard_from">
+          <label for="heard_from"><span class="question-number">6.</span> How did you first hear about the Sustainability Hackathon?</label>
+          <select id="heard_from" name="heard_from">
+            <option value="">Select an option</option>
+            <option>Institution / Faculty</option>
+            <option>Social Media</option>
+            <option>IHCFSI Website</option>
+            <option>Email / WhatsApp</option>
+            <option>Friend / Peer</option>
+            <option>Orientation / Outreach Session</option>
+            <option>Other</option>
+          </select>
+          <div class="error"></div>
+        </div>
+        <div class="form-group full" data-f="other_source" id="otherBox" hidden>
+          <label for="other_source">Please specify <span class="hint">(max 100 characters)</span></label>
+          <input type="text" id="other_source" name="other_source" maxlength="100">
+          <div class="count"><span id="otherCount">0</span>/100</div>
+          <div class="error"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Registration, Submission and Website Experience</h2>
+      <div class="form-grid">
+        <div class="form-group full" data-f="rating_registration">
+          <label><span class="question-number">7.</span> How would you rate the overall registration and idea submission process?</label>
+          <div class="scale" data-name="rating_registration"></div>
+          <div class="ends"><span>1 - Very Poor</span><span>5 - Excellent</span></div>
+          <div class="error"></div>
+        </div>
+        <div class="form-group full" data-f="rating_guidelines">
+          <label><span class="question-number">8.</span> How clear were the hackathon guidelines, themes, and submission requirements?</label>
+          <div class="scale" data-name="rating_guidelines"></div>
+          <div class="ends"><span>1 - Not clear at all</span><span>5 - Very clear</span></div>
+          <div class="error"></div>
+        </div>
+        <div class="form-group full" data-f="rating_website_ease">
+          <label><span class="question-number">9.</span> How easy was it to navigate and use the hackathon website/portal?</label>
+          <div class="scale" data-name="rating_website_ease"></div>
+          <div class="ends"><span>1 - Very difficult</span><span>5 - Very easy</span></div>
+          <div class="error"></div>
+        </div>
+        <div class="form-group full" data-f="faced_issues">
+          <label><span class="question-number">10.</span> Did you face any issues while using the website/portal?</label>
+          <div class="choice" data-name="faced_issues" data-values="Yes|No"></div>
+          <div class="error"></div>
+        </div>
+        <div class="form-group full" data-f="issue_description" id="issueBox" hidden>
+          <label for="issue_description">If yes, please briefly describe the issue <span class="hint">(max 250 characters)</span></label>
+          <textarea id="issue_description" name="issue_description" maxlength="250"></textarea>
+          <div class="count"><span id="issueCount">0</span>/250</div>
+          <div class="error"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Communication and Process</h2>
+      <div class="form-grid">
+        <div class="form-group full" data-f="rating_communication">
+          <label><span class="question-number">11.</span> How would you rate the communication and updates received during the hackathon process?</label>
+          <div class="scale" data-name="rating_communication"></div>
+          <div class="ends"><span>1 - Very Poor</span><span>5 - Excellent</span></div>
+          <div class="error"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Overall Experience</h2>
+      <div class="form-grid">
+        <div class="form-group full" data-f="rating_overall">
+          <label><span class="question-number">12.</span> How would you rate your overall experience of participating in the hackathon?</label>
+          <div class="scale" data-name="rating_overall"></div>
+          <div class="ends"><span>1 - Very Poor</span><span>5 - Excellent</span></div>
+          <div class="error"></div>
+        </div>
+        <div class="form-group full" data-f="sustainability_thinking">
+          <label><span class="question-number">13.</span> Did participating in the hackathon help you think more deeply about sustainability challenges and possible solutions?</label>
+          <div class="choice" data-name="sustainability_thinking" data-values="Not at all|Slightly|To some extent|Significantly"></div>
+          <div class="error"></div>
+        </div>
+        <div class="form-group full" data-f="likelihood_participate">
+          <label><span class="question-number">14.</span> How likely are you to participate in another IHCFSI initiative or hackathon?</label>
+          <div class="scale" data-name="likelihood_participate"></div>
+          <div class="ends"><span>1 - Very unlikely</span><span>5 - Very likely</span></div>
+          <div class="error"></div>
+        </div>
+        <div class="form-group full" data-f="likelihood_recommend">
+          <label><span class="question-number">15.</span> How likely are you to recommend the IHCFSI Sustainability Hackathon to other students?</label>
+          <div class="scale" data-name="likelihood_recommend"></div>
+          <div class="ends"><span>1 - Very unlikely</span><span>5 - Very likely</span></div>
+          <div class="error"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section course-offer">
+      <label>
+        Did you register for our Certificate Programme in Sustainability by IIT Bombay? If not, sign up
+        <a href="https://docs.google.com/forms/d/1kU_5arAp2Q1CYeGPliN2Pas75nXzTilC3t-TYPIslj4/viewform" target="_blank" rel="noopener noreferrer" class="course-offer-btn">here</a>
+        and be among the first to receive programme updates, curriculum details, and launch announcements.
+      </label>
+    </div>
+
+    <div class="submit-row">
+      <button type="submit" id="sendBtn" class="nav-btn next-btn">Send feedback</button>
+    </div>
+  </form>
+</div>
+
+<script>
+// Change if the form is hosted on a different origin than the API.
+const API_URL = '/api/feedback';
+
+const form = document.getElementById('fb');
+const alertBox = document.getElementById('formAlert');
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+// Build rating scales and choice groups
+document.querySelectorAll('.scale').forEach(el => {
+  const n = el.dataset.name;
+  for (let i = 1; i <= 5; i++) {
+    el.insertAdjacentHTML('beforeend',
+      `<label><input type="radio" name="${n}" value="${i}"><span>${i}</span></label>`);
+  }
+});
+document.querySelectorAll('.choice').forEach(el => {
+  const n = el.dataset.name;
+  el.dataset.values.split('|').forEach(v =>
+    el.insertAdjacentHTML('beforeend',
+      `<label><input type="radio" name="${n}" value="${v}"><span>${v}</span></label>`));
+});
+
+const val = n => (form.elements[n].value || '').trim();
+const heard = document.getElementById('heard_from');
+const otherBox = document.getElementById('otherBox');
+const other = document.getElementById('other_source');
+const issueBox = document.getElementById('issueBox');
+const issue = document.getElementById('issue_description');
+
+// Q6: show the text box only when "Other" is selected
+heard.addEventListener('change', () => {
+  const isOther = heard.value === 'Other';
+  otherBox.hidden = !isOther;
+  if (!isOther) { other.value = ''; document.getElementById('otherCount').textContent = 0; setError('other_source', ''); }
+});
+other.addEventListener('input', () => document.getElementById('otherCount').textContent = other.value.length);
+
+// Q10: show the description only when "Yes"
+form.addEventListener('change', e => {
+  if (e.target.name === 'faced_issues') {
+    const yes = e.target.value === 'Yes';
+    issueBox.hidden = !yes;
+    if (!yes) { issue.value = ''; document.getElementById('issueCount').textContent = 0; setError('issue_description', ''); }
+  }
+});
+issue.addEventListener('input', () => document.getElementById('issueCount').textContent = issue.value.length);
+
+function setError(field, msg) {
+  const g = form.querySelector(`[data-f="${field}"]`);
+  if (!g) return;
+  g.classList.toggle('invalid', !!msg);
+  g.querySelector('.error').textContent = msg || '';
+}
+
+function showAlert(type, msg) {
+  alertBox.className = 'alert ' + type;
+  alertBox.textContent = msg;
+  alertBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function validate() {
+  const e = {};
+  if (!val('name')) e.name = 'Enter your name.';
+  if (!val('institution')) e.institution = 'Enter your institution.';
+  if (!val('team_name')) e.team_name = 'Enter your team name.';
+  if (!EMAIL_RE.test(val('registered_email'))) e.registered_email = 'Enter a valid registered email.';
+  if (!EMAIL_RE.test(val('team_lead_email'))) e.team_lead_email = 'Enter a valid team lead email.';
+  if (!val('heard_from')) e.heard_from = 'Choose an option.';
+  if (val('heard_from') === 'Other') {
+    if (!val('other_source')) e.other_source = 'Tell us how you heard about the hackathon.';
+    else if (val('other_source').length > 100) e.other_source = 'Keep this under 100 characters.';
+  }
+  ['rating_registration','rating_guidelines','rating_website_ease','rating_communication',
+   'rating_overall','likelihood_participate','likelihood_recommend'].forEach(n => {
+    if (!val(n)) e[n] = 'Select a rating from 1 to 5.';
+  });
+  if (!val('faced_issues')) e.faced_issues = 'Choose Yes or No.';
+  if (val('faced_issues') === 'Yes') {
+    if (!val('issue_description')) e.issue_description = 'Briefly describe the issue.';
+    else if (val('issue_description').length > 250) e.issue_description = 'Keep this under 250 characters.';
+  }
+  if (!val('sustainability_thinking')) e.sustainability_thinking = 'Choose an option.';
+  return e;
+}
+
+form.addEventListener('submit', async ev => {
+  ev.preventDefault();
+  alertBox.className = 'alert';
+  form.querySelectorAll('[data-f]').forEach(g => setError(g.dataset.f, ''));
+
+  const errs = validate();
+  const keys = Object.keys(errs);
+  if (keys.length) {
+    keys.forEach(k => setError(k, errs[k]));
+    form.querySelector(`[data-f="${keys[0]}"]`).scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  const body = {};
+  new FormData(form).forEach((v, k) => body[k] = typeof v === 'string' ? v.trim() : v);
+
+  const btn = document.getElementById('sendBtn');
+  btn.disabled = true; btn.textContent = 'Sending...';
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.success) {
+      form.hidden = true;
+      showAlert('success', 'Thank you for your feedback. Your response has been recorded and will help us improve the next edition of the hackathon.');
+      return;
+    }
+    if (data.errors) {
+      Object.entries(data.errors).forEach(([k, m]) => setError(k, m));
+      const first = Object.keys(data.errors)[0];
+      const g = form.querySelector(`[data-f="${first}"]`);
+      if (g) g.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      showAlert('error', data.message || 'Something went wrong. Please try again.');
+    }
+  } catch (err) {
+    showAlert('error', 'Network error. Check your connection and try again.');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Send feedback';
+  }
+});
+</script>
+</body>
+</html>
